@@ -1,0 +1,1298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="format-detection" content="telephone=no">
+<title>Ion Formula Builder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700&family=Caveat:wght@600;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   LAB NOTEBOOK — house style for every game on the site.
+   Later, lift this block into notebook.css and link it instead.
+   ============================================================ */
+:root{
+  --paper:#FBF8F1;
+  --grid:#ECE5D3;
+  --margin:#F2B8B5;
+  --card:#FFFFFF;
+  --ink:#1F2A44;
+  --ink-soft:#4B5675;
+  --blue:#2747B8;        /* subscripts */
+  --blue-bg:#EEF2FF;
+  --orange:#B4410F;      /* charges */
+  --orange-dk:#8A3209;
+  --orange-bg:#FFF1DE;
+  --green:#1E7A46;
+  --green-bg:#E3F4EA;
+  --red:#B42318;
+  --red-bg:#FDECEA;
+  --high:#FFE58A;        /* highlighter */
+  --sans:'Lexend',system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+  --hand:'Caveat','Comic Sans MS',cursive;
+
+  /* Sizes that shrink on short screens (see "SCREEN FIT" at the end).
+     Safari's address bar and toolbar eat 120-180px of an iPhone screen,
+     so the whole game screen must fit the VISIBLE height, not the
+     phone's full height. */
+  --kh:44px;          /* key height */
+  --kgap:6px;         /* gap between keys */
+  --ans-h:88px;       /* answer box height */
+  --formula:44px;     /* formula size in the answer box */
+  --ion:27px;         /* ion name size */
+  --gap:12px;         /* gap between blocks */
+  --btn-h:50px;       /* big buttons */
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+html,body{margin:0;padding:0;overscroll-behavior:none}
+button,a{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;touch-action:manipulation}
+body{
+  font-family:var(--sans);
+  color:var(--ink);
+  background-color:var(--paper);
+  background-image:
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size:22px 22px;
+  line-height:1.45;
+  display:flex;justify-content:center;
+  touch-action:manipulation;
+}
+.app{
+  width:100%;max-width:520px;min-height:100vh;min-height:100dvh;
+  display:flex;flex-direction:column;position:relative;
+  /* keep clear of the notch / home bar when saved to the home screen */
+  padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+/* the red margin line of an exercise book */
+.app::before{
+  content:"";position:absolute;left:10px;top:0;bottom:0;width:2px;
+  background:var(--margin);pointer-events:none;
+}
+.hidden{display:none !important}
+
+/* ---------- buttons ---------- */
+.btn{
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  width:100%;min-height:var(--btn-h);padding:8px 14px;
+  font-family:var(--sans);font-size:16px;font-weight:600;color:var(--ink);
+  background:var(--card);border:2px solid var(--ink);border-radius:10px;
+  box-shadow:3px 3px 0 var(--ink);cursor:pointer;text-decoration:none;
+  transition:transform .06s, box-shadow .06s;
+}
+.btn:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+.btn.primary{background:var(--ink);color:#fff;box-shadow:3px 3px 0 var(--blue)}
+.btn.primary:active{box-shadow:1px 1px 0 var(--blue)}
+.btn.accent{background:var(--orange);color:#fff}
+.btn.plain{background:transparent;box-shadow:none;border-color:transparent;color:var(--ink-soft);text-decoration:underline;min-height:44px}
+.btn.plain:active{transform:none}
+.small{
+  height:44px;padding:0 12px;display:inline-flex;align-items:center;gap:5px;
+  font-family:var(--sans);font-size:14px;font-weight:600;color:var(--ink);
+  background:var(--card);border:2px solid var(--ink);border-radius:8px;
+  box-shadow:2px 2px 0 var(--ink);cursor:pointer;text-decoration:none;
+}
+.small:active{transform:translate(1px,1px);box-shadow:1px 1px 0 var(--ink)}
+.small.off{color:#8A93AB}
+
+/* ---------- top bar ---------- */
+.topbar{display:flex;align-items:center;gap:8px;padding:14px 16px 6px 22px}
+.topbar .spacer{flex:1}
+/* streak badge sits at the end of the progress bar: never covers the
+   question, never crowds the top bar on a narrow phone */
+.combo{
+  flex:none;font-family:var(--hand);font-size:20px;font-weight:700;line-height:1;color:var(--orange);
+  background:var(--card);border:2px solid var(--orange);border-radius:99px;
+  padding:2px 9px 3px;white-space:nowrap;transform:rotate(-3deg);
+}
+.combo:empty{display:none}
+.combo.big{animation:boing .4s ease-out}
+@keyframes boing{0%,100%{transform:rotate(-3deg) scale(1)}50%{transform:rotate(-3deg) scale(1.25)}}
+.scorebox{
+  height:36px;padding:0 10px;display:inline-flex;align-items:center;
+  background:var(--card);border:2px solid var(--ink);border-radius:8px;
+  font-size:15px;font-weight:700;min-width:44px;justify-content:center;
+}
+.hearts{display:inline-flex;gap:2px}
+.hearts svg{display:block}
+
+.progressrow{display:flex;align-items:center;gap:10px;padding:4px 16px 0 22px}
+.qcount{font-family:var(--hand);font-size:22px;font-weight:700;color:var(--blue);white-space:nowrap;min-width:72px}
+.track{flex:1;height:12px;background:var(--card);border:2px solid var(--ink);border-radius:99px;overflow:hidden}
+.fill{height:100%;width:0;background:var(--blue);transition:width .3s ease}
+.track.time .fill{background:var(--orange)}
+.track.danger .fill{background:var(--red);animation:blinkbar .6s steps(2) infinite}
+@keyframes blinkbar{50%{opacity:.45}}
+
+.screen{flex:1;display:flex;flex-direction:column;gap:var(--gap);padding:12px 16px 16px 22px}
+
+/* ---------- start screen ---------- */
+.title{font-size:30px;font-weight:700;line-height:1.2;margin:4px 0 0;text-align:center}
+.title .hl{background:var(--high);padding:0 6px;border-radius:4px}
+.tagline{font-family:var(--hand);font-size:26px;font-weight:700;color:var(--blue);text-align:center;margin:-4px 0 0}
+.lede{font-size:14px;color:var(--ink-soft);text-align:center;margin:0}
+.label{font-family:var(--hand);font-size:24px;font-weight:700;color:var(--ink);margin:6px 0 -4px}
+.choices{display:flex;gap:8px}
+.choice{
+  flex:1 1 0;min-width:0;min-height:56px;padding:8px 4px;
+  font-family:var(--sans);font-size:14px;font-weight:600;color:var(--ink);
+  background:var(--card);border:2px solid var(--ink);border-radius:8px;
+  box-shadow:2px 2px 0 var(--ink);cursor:pointer;text-align:center;line-height:1.25;
+}
+.choice small{display:block;font-size:11.5px;font-weight:500;color:var(--ink-soft);margin-top:2px}
+.choice[aria-pressed="true"]{background:var(--high);font-weight:700}
+.choice:active{transform:translate(1px,1px);box-shadow:1px 1px 0 var(--ink)}
+.note{font-size:13px;color:var(--ink-soft);text-align:center;margin:2px 0 0}
+
+/* ---------- mascot: a line-drawn conical flask ---------- */
+.mwrap{display:block;width:max-content;margin:0 auto;animation:bob 2.8s ease-in-out infinite}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+.mwrap.happy{animation:hop .55s ease-out 1}
+@keyframes hop{0%,100%{transform:translateY(0) rotate(0)}35%{transform:translateY(-12px) rotate(-6deg)}70%{transform:translateY(-3px) rotate(5deg)}}
+.mwrap.sad{animation:wobble .5s ease-in-out 1}
+@keyframes wobble{0%,100%{transform:rotate(0)}25%{transform:rotate(-10deg)}75%{transform:rotate(10deg)}}
+.mascot .eye{transform-box:fill-box;transform-origin:center;animation:blink 4.4s infinite}
+@keyframes blink{0%,94%,100%{transform:scaleY(1)}97%{transform:scaleY(.1)}}
+.mascot .bub{animation:rise 2.4s linear infinite;opacity:0}
+.mascot .bub.b2{animation-delay:.8s}
+.mascot .bub.b3{animation-delay:1.6s}
+@keyframes rise{0%{transform:translateY(0);opacity:0}25%{opacity:1}100%{transform:translateY(-14px);opacity:0}}
+
+/* ---------- question card ---------- */
+.qcard{
+  position:relative;display:flex;align-items:center;gap:12px;
+  background:var(--card);border:2px solid var(--ink);border-radius:10px;
+  box-shadow:4px 4px 0 var(--ink);padding:12px 14px;
+}
+.qtext{flex:1;min-width:0;text-align:center}
+.qlabel{font-size:13px;font-weight:500;color:var(--ink-soft)}
+.ionname{font-size:var(--ion);font-weight:700;line-height:1.25;margin-top:4px;word-break:break-word}
+/* "Try again" hint lives INSIDE the question card, so the keypad
+   never gets pushed below Safari's toolbar */
+.qhint{display:none;font-size:13.5px;line-height:1.35;color:var(--orange-dk);margin-top:6px;text-align:left}
+.qhint b{font-weight:700}
+.qcard.hinting{border-color:var(--orange);box-shadow:4px 4px 0 var(--orange);background:var(--orange-bg)}
+.qcard.hinting .qlabel{display:none}
+.qcard.hinting .qhint{display:block}
+.qcard.hinting .ionname{margin-top:0}
+.ionname span{background:var(--high);padding:0 6px;border-radius:4px;-webkit-box-decoration-break:clone;box-decoration-break:clone}
+
+/* ---------- answer box ---------- */
+.answer{
+  position:relative;min-height:var(--ans-h);display:flex;align-items:center;justify-content:center;
+  padding:8px 12px;background:var(--card);
+  border:2px dashed var(--ink-soft);border-radius:10px;
+}
+.answer.ok{border:2px solid var(--green);box-shadow:4px 4px 0 var(--green)}
+.answer.no{border:2px solid var(--red);box-shadow:4px 4px 0 var(--red)}
+/* The formula MUST sit in an inline wrapper: inside a flex container,
+   sub/sup become flex items and their vertical offset is ignored. */
+.answer .formula{display:inline-block;white-space:nowrap;font-size:var(--formula);font-weight:600;line-height:1.15}
+.answer .ph{font-size:15px;font-weight:500;color:#8A93AB}
+sub,sup{font-size:.55em;line-height:0;vertical-align:baseline;position:relative}
+sub{bottom:-.25em;color:var(--blue)}
+sup{top:-.75em;color:var(--orange)}
+.caret{display:inline-block;width:3px;height:.78em;background:var(--blue);margin-left:3px;vertical-align:-4px;animation:caret 1s steps(1) infinite}
+@keyframes caret{50%{opacity:0}}
+.shake{animation:shake .35s ease-in-out}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(7px)}60%{transform:translateX(-4px)}80%{transform:translateX(3px)}}
+
+.pop{
+  position:absolute;right:14px;top:4px;pointer-events:none;
+  font-family:var(--hand);font-size:30px;font-weight:700;color:var(--green);
+  animation:pop 1.1s ease-out forwards;
+}
+@keyframes pop{0%{opacity:0;transform:translateY(8px) rotate(-6deg)}20%{opacity:1;transform:translateY(-4px) rotate(-6deg)}100%{opacity:0;transform:translateY(-40px) rotate(-6deg)}}
+.spark{position:absolute;left:50%;top:50%;width:7px;height:7px;border-radius:50%;pointer-events:none;animation:fly .7s ease-out forwards}
+@keyframes fly{0%{opacity:1;transform:translate(0,0)}100%{opacity:0;transform:translate(var(--dx),var(--dy)) scale(.4)}}
+
+/* ---------- feedback ---------- */
+.feedback{display:none;padding:10px 14px;border:2px solid var(--ink);border-radius:10px;background:var(--card);font-size:14.5px}
+.feedback.show{display:block;animation:slide .2s ease-out}
+@keyframes slide{0%{opacity:0;transform:translateY(6px)}100%{opacity:1;transform:translateY(0)}}
+.feedback .head{display:flex;align-items:center;gap:6px;font-family:var(--hand);font-size:27px;font-weight:700;line-height:1.1;margin-bottom:2px}
+.feedback.good{border-color:var(--green);background:var(--green-bg)}
+.feedback.good .head{color:var(--green)}
+.feedback.hint{border-color:var(--orange);background:var(--orange-bg)}
+.feedback.hint .head{color:var(--orange-dk)}
+.feedback.bad{border-color:var(--red);background:var(--red-bg)}
+.feedback.bad .head{color:var(--red)}
+.feedback .reveal{display:block;font-size:30px;font-weight:600;margin-top:6px;line-height:1.3}
+
+/* ---------- keypad ---------- */
+.kb{margin-top:auto;display:flex;flex-direction:column;gap:var(--kgap);padding-top:2px}
+.kbrow{display:flex;gap:var(--kgap)}
+.key{
+  flex:1 1 0;min-width:0;height:var(--kh);padding:0;
+  font-family:var(--sans);font-size:17px;font-weight:600;color:var(--ink);
+  background:var(--card);border:2px solid var(--ink);border-radius:8px;
+  box-shadow:2px 2px 0 var(--ink);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;user-select:none;
+}
+.key:active{transform:translate(1px,1px);box-shadow:1px 1px 0 var(--ink)}
+.key.num{background:var(--blue-bg);border-color:var(--blue);box-shadow:2px 2px 0 var(--blue);color:var(--blue);font-size:16px}
+.key.chg{background:var(--orange-bg);border-color:var(--orange);box-shadow:2px 2px 0 var(--orange);color:var(--orange-dk);font-size:16px;font-weight:700}
+.key.chg.on{background:var(--orange);border-color:var(--ink);box-shadow:2px 2px 0 var(--ink);color:#fff}
+.key.caps{flex:2 1 0;background:#EDE8DA;font-size:13px}
+.key.caps[data-on="lower"]{background:var(--high)}
+.kbhint{font-size:12px;color:var(--ink-soft);text-align:center;margin:0 0 2px}
+.kbhint b{font-weight:600}
+.kbhint .bl{color:var(--blue)}
+.kbhint .or{color:var(--orange)}
+.actions{display:flex;gap:var(--kgap);margin-top:2px}
+.actions .del{flex:1}
+.actions .main{flex:2}
+
+/* ---------- results ---------- */
+.rank{font-family:var(--hand);font-size:34px;font-weight:700;color:var(--blue);text-align:center;line-height:1.1;margin-top:-4px}
+.bigscore{font-size:46px;font-weight:700;text-align:center;line-height:1.1}
+.bigscore small{display:block;font-size:13px;font-weight:500;color:var(--ink-soft)}
+.newbest{font-family:var(--hand);font-size:26px;font-weight:700;color:var(--orange);text-align:center;transform:rotate(-3deg)}
+.stats{display:flex;gap:8px}
+.stat{flex:1;background:var(--card);border:2px solid var(--ink);border-radius:8px;padding:8px 4px;text-align:center}
+.stat .v{font-size:20px;font-weight:700}
+.stat .k{font-size:12px;color:var(--ink-soft)}
+.misslist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.misslist li{
+  display:flex;justify-content:space-between;align-items:center;gap:10px;
+  background:var(--card);border:2px solid var(--ink);border-radius:8px;padding:8px 12px;font-size:14px;
+}
+.misslist .f{font-size:22px;font-weight:600;white-space:nowrap}
+
+/* ============================================================
+   SCREEN FIT — sized to the height Safari actually leaves visible
+   with its address bar and toolbar showing (portrait):
+     iPhone SE ~548px · 13 mini ~629 · 14/15/16 ~664 · Pro Max ~740
+   ============================================================ */
+@media (max-height: 760px){
+  :root{--kh:42px;--kgap:5px;--ans-h:66px;--formula:38px;--ion:24px;--gap:9px;--btn-h:46px}
+  .topbar{padding-top:10px}
+  .screen{padding-top:8px;padding-bottom:10px}
+  .qcard{padding:9px 12px}
+  .qcard .mwrap svg{width:40px;height:40px}
+  .kbhint{display:none}
+  #mascotTitle svg{width:64px;height:64px}
+  .title{font-size:26px}
+  .tagline{font-size:23px}
+  .label{font-size:21px;margin-top:2px}
+  .choice{min-height:50px}
+}
+@media (max-height: 680px){
+  :root{--kh:40px;--ans-h:56px;--formula:33px;--ion:21px;--gap:7px;--btn-h:44px}
+  .topbar{padding-top:6px;padding-bottom:2px}
+  .small{height:40px}
+  .scorebox{height:32px}
+  .progressrow{padding-top:2px}
+  .qcount{font-size:19px;min-width:58px}
+  .track{height:10px}
+  .qcard .mwrap{display:none}
+  .qcard{padding:7px 12px}
+  .qlabel{font-size:12px}
+  .qhint{font-size:13px;margin-top:3px}
+  .lede{display:none}
+  #mascotTitle svg{width:48px;height:48px}
+  .title{font-size:24px}
+  .choice{min-height:46px;padding:5px 4px}
+}
+@media (max-height: 580px){
+  :root{--kh:37px;--kgap:4px;--ans-h:50px;--formula:30px;--ion:20px;--gap:6px}
+  .screen{padding-top:5px;padding-bottom:6px}
+  .qcard{padding:5px 10px}
+  .qcard.hinting .ionname{font-size:18px}
+  .qhint{font-size:12.5px;line-height:1.3}
+  #mascotTitle{display:none}
+  .tagline{font-size:21px}
+  .label{font-size:19px}
+}
+
+/* iPad portrait: use the bigger screen instead of a phone-sized strip */
+@media (min-width: 700px) and (min-height: 900px){
+  :root{--kh:64px;--kgap:10px;--ans-h:132px;--formula:66px;--ion:38px;--gap:18px;--btn-h:68px}
+  .app{max-width:680px}
+  .topbar{padding:22px 24px 8px 34px}
+  .progressrow{padding:6px 24px 0 34px}
+  .screen{padding:18px 24px 24px 34px}
+  .small{height:52px;font-size:17px;padding:0 16px}
+  .scorebox{height:44px;font-size:19px;padding:0 14px}
+  .qcount{font-size:28px;min-width:100px}
+  .track{height:16px}
+  .key{font-size:24px;border-radius:10px}
+  .key.num,.key.chg{font-size:22px}
+  .key.caps{font-size:17px}
+  .btn{font-size:20px;border-radius:12px}
+  .qcard{padding:18px 20px}
+  .qcard .mwrap svg{width:72px;height:72px}
+  .qlabel{font-size:17px}
+  .qhint{font-size:17px}
+  .kbhint{font-size:15px}
+  .feedback{font-size:18px;padding:14px 18px}
+  .feedback .head{font-size:34px}
+  .feedback .reveal{font-size:40px}
+  .combo{font-size:27px;padding:3px 12px 4px}
+  .title{font-size:40px}
+  .tagline{font-size:34px}
+  .lede{font-size:17px}
+  .label{font-size:30px}
+  .choice{min-height:72px;font-size:18px}
+  .choice small{font-size:14px}
+  .note{font-size:16px}
+  #mascotTitle svg{width:140px;height:140px}
+  .rank{font-size:46px}
+  .bigscore{font-size:64px}
+  .stat .v{font-size:28px}
+  .stat .k{font-size:15px}
+  .misslist li{font-size:17px}
+  .misslist .f{font-size:28px}
+}
+
+/* ============================================================
+   ION LIST — reference screen, opened from the front page
+   ============================================================ */
+.startrow{display:flex;gap:10px;margin-top:auto}
+.startrow #listBtn{flex:1}
+.startrow #startBtn{flex:2}
+body.listing .topbar{position:sticky;top:0;z-index:5;background:var(--paper);border-bottom:2px solid var(--grid)}
+.listhead{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.listtitle{font-size:26px;font-weight:700;margin:0}
+.listtitle span{background:var(--high);padding:0 6px;border-radius:4px}
+.quiz{display:inline-flex;align-items:center;gap:8px;font-size:14px;font-weight:600;cursor:pointer;
+  background:var(--card);border:2px solid var(--ink);border-radius:99px;padding:6px 12px;box-shadow:2px 2px 0 var(--ink);min-height:40px}
+.quiz input{width:18px;height:18px;accent-color:var(--blue);margin:0}
+.tabs{display:flex;gap:8px}
+.tabs button{flex:1;min-height:48px;font-family:var(--sans);font-size:15px;font-weight:700;color:var(--ink);
+  background:var(--card);border:2px solid var(--ink);border-radius:8px;box-shadow:2px 2px 0 var(--ink);cursor:pointer;line-height:1.2}
+.tabs button small{display:block;font-size:12px;font-weight:500;color:var(--ink-soft)}
+.tabs button[aria-selected="true"]{background:var(--high)}
+.lists{display:block}
+.col{display:flex;flex-direction:column;gap:14px}
+.col.hidden-tab{display:none}
+.coltitle{display:none;font-family:var(--hand);font-size:30px;font-weight:700;margin:0}
+.group{background:var(--card);border:2px solid var(--ink);border-radius:10px;box-shadow:3px 3px 0 var(--ink);overflow:hidden}
+.ghead{display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--orange-bg);border-bottom:2px solid var(--ink);
+  font-size:14px;font-weight:600;color:var(--orange-dk)}
+.ghead .pill{font-size:17px;font-weight:700;color:#fff;background:var(--orange);border-radius:6px;padding:1px 9px;min-width:44px;text-align:center}
+.ghead .n{margin-left:auto;font-weight:500;color:var(--ink-soft)}
+.ionrows{list-style:none;margin:0;padding:0}
+.ionrows li{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 12px;border-top:1px dashed var(--grid);min-height:48px}
+.ionrows li:first-child{border-top:none}
+.ionrows .nm{font-size:15px;display:flex;align-items:center;gap:7px;min-width:0}
+.ionrows .weak{font-size:11px;font-weight:700;color:var(--orange-dk);background:var(--orange-bg);border:1.5px solid var(--orange);border-radius:99px;padding:0 6px;white-space:nowrap}
+.ionrows .fm{font-size:23px;font-weight:600;white-space:nowrap;text-align:right}
+.ionrows .fm .alt{font-size:.7em;font-weight:500;color:var(--ink-soft)}
+.ionrows .cover{display:none;font-size:13px;font-weight:600;color:var(--blue);border:2px dashed var(--blue);border-radius:6px;padding:4px 10px;white-space:nowrap}
+/* self-test: cover the formula column OR the name column */
+.lists.hide-f li:not(.shown) .fm{display:none}
+.lists.hide-f li:not(.shown) .fcov{display:inline-block}
+.lists.hide-n li:not(.shown) .nm{display:none}
+.lists.hide-n li:not(.shown) .ncov{display:inline-block}
+.lists.hide-f li,.lists.hide-n li{cursor:pointer}
+.toggles{display:flex;gap:8px;width:100%}
+.toggles .quiz{flex:1;justify-content:center}
+.quiz:has(input:checked){background:var(--high)}
+.listfoot{font-size:13px;color:var(--ink-soft);text-align:center;margin:4px 0 0}
+@media (min-width: 700px){
+  .tabs{display:none}
+  .lists{display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start}
+  .col.hidden-tab{display:flex}
+  .coltitle{display:block}
+  .listtitle{font-size:34px}
+  .ionrows .nm{font-size:17px}
+  .ionrows .fm{font-size:28px}
+}
+
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important}
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ============ TOP BAR ============ -->
+  <div class="topbar">
+    <a class="small" id="homeLink" href="index.html">
+      <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>All games
+    </a>
+    <button class="small hidden" id="backBtn">
+      <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>Back
+    </button>
+    <button class="small hidden" id="exitBtn">
+      <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>Exit
+    </button>
+    <span class="hearts hidden" id="hearts"></span>
+    <span class="spacer"></span>
+    <span class="scorebox hidden" id="scoreSlot"></span>
+    <button class="small" id="sfxBtn" aria-label="Sound on or off"></button>
+  </div>
+  <div class="progressrow hidden" id="progressRow">
+    <span class="qcount" id="qcount"></span>
+    <div class="track" id="track"><div class="fill" id="fill"></div></div>
+    <span class="combo" id="combo"></span>
+  </div>
+
+  <!-- ============ START SCREEN ============ -->
+  <section class="screen" id="startScreen">
+    <span class="mwrap" id="mascotTitle"></span>
+    <h1 class="title"><span class="hl">Ion</span> Formula Builder</h1>
+    <p class="tagline">Name in, formula out!</p>
+    <p class="lede">Capitals, subscripts and charge all have to be right.</p>
+
+    <div class="label">Mode</div>
+    <div class="choices" id="modeChoices">
+      <button class="choice" data-mode="classic" aria-pressed="true">Classic<small>2 tries each</small></button>
+      <button class="choice" data-mode="time" aria-pressed="false">Time attack<small>60 seconds</small></button>
+      <button class="choice" data-mode="survival" aria-pressed="false">Survival<small>3 lives</small></button>
+    </div>
+
+    <div class="label">Which ions?</div>
+    <div class="choices" id="catChoices">
+      <button class="choice" data-cat="all" aria-pressed="true">All<small>46 ions</small></button>
+      <button class="choice" data-cat="cation" aria-pressed="false">Cations<small>21 ions</small></button>
+      <button class="choice" data-cat="anion" aria-pressed="false">Anions<small>25 ions</small></button>
+    </div>
+
+    <div class="label" id="lenLabel">How many?</div>
+    <div class="choices" id="lenChoices">
+      <button class="choice" data-len="10" aria-pressed="true">10</button>
+      <button class="choice" data-len="20" aria-pressed="false">20</button>
+      <button class="choice" data-len="0" aria-pressed="false">All</button>
+    </div>
+
+    <p class="note" id="bestNote"></p>
+    <div class="startrow">
+      <button class="btn" id="listBtn">
+        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 21V5"/><path d="M8 7h7M8 11h7"/></svg>Ion list
+      </button>
+      <button class="btn primary" id="startBtn">Start</button>
+    </div>
+  </section>
+
+  <!-- ============ ION LIST ============ -->
+  <section class="screen hidden" id="listScreen">
+    <div class="listhead">
+      <h2 class="listtitle"><span>Ion</span> list</h2>
+      <div class="toggles">
+        <label class="quiz"><input type="checkbox" id="hideN"> Cover names</label>
+        <label class="quiz"><input type="checkbox" id="hideF"> Cover formulas</label>
+      </div>
+    </div>
+    <div class="tabs" role="tablist" id="listTabs">
+      <button role="tab" aria-selected="true" data-tab="cation">Cations<small>positive ions</small></button>
+      <button role="tab" aria-selected="false" data-tab="anion">Anions<small>negative ions</small></button>
+    </div>
+    <div class="lists" id="lists"></div>
+    <p class="listfoot">Cover one column, recall it, then tap the row to check yourself.</p>
+  </section>
+
+  <!-- ============ GAME SCREEN ============ -->
+  <section class="screen hidden" id="gameScreen">
+    <div class="qcard" id="qcard">
+      <span class="mwrap" id="mascotGame"></span>
+      <div class="qtext">
+        <div class="qlabel">Write the formula of the</div>
+        <div class="ionname" id="ionname"></div>
+        <div class="qhint" id="qhint"></div>
+      </div>
+    </div>
+
+    <div class="answer" id="answer"><span class="formula" id="answerInner"></span></div>
+    <div class="feedback" id="feedback"></div>
+
+    <div class="kb" id="kb">
+      <p class="kbhint"><b class="bl">Blue numbers</b> go below the line &middot; <b class="or">orange keys</b> add the charge</p>
+      <div class="kbrow" id="rowA"></div>
+      <div class="kbrow" id="rowB"></div>
+      <div class="kbrow" id="rowC"></div>
+      <div class="kbrow" id="rowD"></div>
+      <div class="kbrow" id="rowNum"></div>
+      <div class="kbrow" id="rowChg"></div>
+      <div class="actions">
+        <button class="btn del" id="delBtn">Delete</button>
+        <button class="btn primary main" id="checkBtn">Check</button>
+      </div>
+    </div>
+
+    <div class="hidden" id="nextWrap" style="margin-top:auto">
+      <button class="btn primary" id="nextBtn">Next &rarr;</button>
+    </div>
+  </section>
+
+  <!-- ============ RESULTS ============ -->
+  <section class="screen hidden" id="resultScreen">
+    <span class="mwrap" id="mascotEnd"></span>
+    <div class="rank" id="rankTitle"></div>
+    <div class="bigscore" id="bigscore"></div>
+    <div class="newbest hidden" id="newBest">New personal best!</div>
+    <div class="stats">
+      <div class="stat"><div class="v" id="stCorrect"></div><div class="k">first-try correct</div></div>
+      <div class="stat"><div class="v" id="stStreak"></div><div class="k">best streak</div></div>
+      <div class="stat"><div class="v" id="stAcc"></div><div class="k">accuracy</div></div>
+    </div>
+    <div id="missWrap"></div>
+    <div style="margin-top:auto;display:flex;flex-direction:column;gap:10px">
+      <button class="btn primary" id="againBtn">Play again</button>
+      <button class="btn accent hidden" id="retryBtn">Practise my mistakes</button>
+      <button class="btn plain" id="menuBtn">Back to menu</button>
+    </div>
+  </section>
+
+</div>
+
+<script>
+/* ==================================================================
+   1. ION DATA  —  edit freely; nothing else needs changing.
+   Notation: letters & subscript digits, then ^ then the charge.
+     Na^+    NH4^+    SO4^2-    Cr2O7^2-    PO4^3-
+   ================================================================== */
+const IONS = [
+  // ---- cations 1+ ----
+  {name:"sodium ion",            f:"Na^+",     cat:"cation"},
+  {name:"potassium ion",         f:"K^+",      cat:"cation"},
+  {name:"copper(I) ion",         f:"Cu^+",     cat:"cation"},
+  {name:"silver ion",            f:"Ag^+",     cat:"cation"},
+  {name:"mercury(I) ion",        f:"Hg^+",     cat:"cation"},
+  {name:"hydrogen ion",          f:"H^+",      cat:"cation"},
+  {name:"ammonium ion",          f:"NH4^+",    cat:"cation"},
+  // ---- cations 2+ ----
+  {name:"magnesium ion",         f:"Mg^2+",    cat:"cation"},
+  {name:"calcium ion",           f:"Ca^2+",    cat:"cation"},
+  {name:"barium ion",            f:"Ba^2+",    cat:"cation"},
+  {name:"lead(II) ion",          f:"Pb^2+",    cat:"cation"},
+  {name:"iron(II) ion",          f:"Fe^2+",    cat:"cation"},
+  {name:"cobalt(II) ion",        f:"Co^2+",    cat:"cation"},
+  {name:"nickel(II) ion",        f:"Ni^2+",    cat:"cation"},
+  {name:"manganese(II) ion",     f:"Mn^2+",    cat:"cation"},
+  {name:"copper(II) ion",        f:"Cu^2+",    cat:"cation"},
+  {name:"zinc ion",              f:"Zn^2+",    cat:"cation"},
+  {name:"mercury(II) ion",       f:"Hg^2+",    cat:"cation"},
+  // ---- cations 3+ ----
+  {name:"aluminium ion",         f:"Al^3+",    cat:"cation"},
+  {name:"iron(III) ion",         f:"Fe^3+",    cat:"cation"},
+  {name:"chromium(III) ion",     f:"Cr^3+",    cat:"cation"},
+  // ---- anions 1- ----
+  {name:"hydride ion",           f:"H^-",      cat:"anion"},
+  {name:"chloride ion",          f:"Cl^-",     cat:"anion"},
+  {name:"bromide ion",           f:"Br^-",     cat:"anion"},
+  {name:"iodide ion",            f:"I^-",      cat:"anion"},
+  {name:"hydroxide ion",         f:"OH^-",     cat:"anion"},
+  {name:"nitrate ion",           f:"NO3^-",    cat:"anion"},
+  {name:"nitrite ion",           f:"NO2^-",    cat:"anion"},
+  {name:"hydrogencarbonate ion", f:"HCO3^-",   cat:"anion"},
+  {name:"hydrogensulphate ion",  f:"HSO4^-",   cat:"anion"},
+  {name:"cyanide ion",           f:"CN^-",     cat:"anion"},
+  {name:"permanganate ion",      f:"MnO4^-",   cat:"anion"},
+  {name:"chlorate ion",          f:"ClO3^-",   cat:"anion"},
+  {name:"hypochlorite ion",      f:"ClO^-",    cat:"anion", alt:["OCl^-"]},
+  // ---- anions 2- ----
+  {name:"oxide ion",             f:"O^2-",     cat:"anion"},
+  {name:"sulphide ion",          f:"S^2-",     cat:"anion"},
+  {name:"sulphate ion",          f:"SO4^2-",   cat:"anion"},
+  {name:"sulphite ion",          f:"SO3^2-",   cat:"anion"},
+  {name:"thiosulphate ion",      f:"S2O3^2-",  cat:"anion"},
+  {name:"silicate ion",          f:"SiO3^2-",  cat:"anion"},
+  {name:"carbonate ion",         f:"CO3^2-",   cat:"anion"},
+  {name:"chromate ion",          f:"CrO4^2-",  cat:"anion"},
+  {name:"dichromate ion",        f:"Cr2O7^2-", cat:"anion"},
+  // ---- anions 3- ----
+  {name:"nitride ion",           f:"N^3-",     cat:"anion"},
+  {name:"phosphide ion",         f:"P^3-",     cat:"anion"},
+  {name:"phosphate ion",         f:"PO4^3-",   cat:"anion"}
+];
+
+/* End-of-round titles: a light-hearted target to aim for. */
+const RANKS = [
+  {min:100, t:"Nobel Laureate!"},
+  {min:90,  t:"Master Chemist"},
+  {min:75,  t:"Senior Chemist"},
+  {min:60,  t:"Junior Chemist"},
+  {min:40,  t:"Lab Assistant"},
+  {min:0,   t:"Test Tube Washer"}
+];
+
+/* ==================================================================
+   2. MASCOT  —  a line-drawn conical flask with a face.
+   ================================================================== */
+function mascotSVG(size){
+  return '<svg class="mascot" width="'+size+'" height="'+size+'" viewBox="0 0 64 64" aria-hidden="true">' +
+    // liquid
+    '<path d="M14 50 L23 34 H41 L50 50 Q51 55 46 55 H18 Q13 55 14 50 Z" fill="#8FD9A8"/>' +
+    // flask outline
+    '<path d="M26 8 V24 L12 50 Q10 57 18 57 H46 Q54 57 52 50 L38 24 V8" fill="none" stroke="#1F2A44" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>' +
+    '<path d="M23 8 H41" stroke="#1F2A44" stroke-width="3" stroke-linecap="round"/>' +
+    // face
+    '<circle class="eye" cx="27" cy="44" r="2.4" fill="#1F2A44"/>' +
+    '<circle class="eye" cx="37" cy="44" r="2.4" fill="#1F2A44"/>' +
+    '<path d="M29 49 Q32 52 35 49" fill="none" stroke="#1F2A44" stroke-width="2" stroke-linecap="round"/>' +
+    // bubbles
+    '<circle class="bub" cx="30" cy="30" r="2" fill="none" stroke="#2747B8" stroke-width="1.6"/>' +
+    '<circle class="bub b2" cx="35" cy="28" r="1.6" fill="none" stroke="#2747B8" stroke-width="1.6"/>' +
+    '<circle class="bub b3" cx="32" cy="22" r="1.3" fill="none" stroke="#2747B8" stroke-width="1.6"/>' +
+  '</svg>';
+}
+const HEART = (full) =>
+  '<svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20s-7-4.4-9-9a4.8 4.8 0 0 1 9-3 4.8 4.8 0 0 1 9 3c-2 4.6-9 9-9 9z" fill="'+
+  (full ? "#B42318" : "none") + '" stroke="#1F2A44" stroke-width="2" stroke-linejoin="round"/></svg>';
+const SPEAKER = (on) =>
+  '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+  '<path d="M4 9h4l5-4v14l-5-4H4z"/>' +
+  (on ? '<path d="M16.5 8.5a5 5 0 0 1 0 7"/><path d="M19 6a8.5 8.5 0 0 1 0 12"/>' : '<path d="M17 9l5 6M22 9l-5 6"/>') +
+  '</svg>';
+
+/* Saved scores live in this browser only. Wrapped in try/catch because
+   Safari can block storage (private mode, strict settings); the game
+   must still run when it does. */
+const store = {
+  get(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } },
+  set(k, v){ try{ localStorage.setItem(k, v); }catch(e){} }
+};
+
+/* ==================================================================
+   3. SOUND  —  soft tones generated in the browser, no audio files.
+   iPhone note: no sound plays while the ring/silent switch is on silent.
+   ================================================================== */
+let actx = null, muted = (store.get("ionSfx") === "off");
+function audio(){
+  if(!actx){
+    try{ actx = new (window.AudioContext || window.webkitAudioContext)(); }catch(e){ return null; }
+  }
+  if(actx.state === "suspended") actx.resume();
+  return actx;
+}
+function tone(freq, dur, delay, vol, type){
+  if(muted) return;
+  const c = audio(); if(!c) return;
+  const t = c.currentTime + (delay || 0);
+  const o = c.createOscillator(), g = c.createGain();
+  o.type = type || "triangle";
+  o.frequency.setValueAtTime(freq, t);
+  g.gain.setValueAtTime(vol || .08, t);
+  g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+  o.connect(g); g.connect(c.destination);
+  o.start(t); o.stop(t + dur);
+}
+const SFX = {
+  tap  : () => tone(520, .04, 0, .03),
+  good : () => { tone(660,.09,0); tone(880,.14,.08); },
+  combo: () => { tone(660,.07,0); tone(880,.07,.07); tone(1175,.16,.14); },
+  bad  : () => { tone(220,.16,0,.07,"sine"); tone(175,.22,.12,.07,"sine"); },
+  start: () => { tone(523,.08,0); tone(659,.08,.08); tone(784,.16,.16); },
+  over : () => { tone(784,.12,0); tone(659,.12,.12); tone(523,.24,.24); },
+  tick : () => tone(1000,.03,0,.04,"sine")
+};
+
+/* ==================================================================
+   4. TOKEN MODEL  —  every key press is stored as a tagged token,
+   so the game always knows a subscript from a charge.
+   ================================================================== */
+function parseFormula(spec){
+  const [body, charge=""] = spec.split("^");
+  const toks = [];
+  for(const ch of body) toks.push({t: /[0-9]/.test(ch) ? "sub" : "sym", v: ch});
+  for(const ch of charge) toks.push({t:"sup", v: ch});
+  return toks;
+}
+function renderTokens(toks){
+  let html = "";
+  for(const k of toks){
+    const v = k.v === "-" ? "−" : k.v;
+    if(k.t === "sub")      html += "<sub>"+v+"</sub>";
+    else if(k.t === "sup") html += "<sup>"+v+"</sup>";
+    else                   html += v;
+  }
+  return html;
+}
+const key = t => t.map(k => k.t + ":" + (k.v === "-" ? "−" : k.v)).join("|");
+
+/* ==================================================================
+   5. STATE
+   ================================================================== */
+let mode = "classic", cat = "all", roundLen = 10;
+let pool = [], idx = 0, score = 0, points = 0, attempts = 0;
+let missed = [], asked = 0, tokens = [], caps = true, locked = false;
+let streak = 0, bestStreak = 0, lives = 3, timeLeft = 60, timer = null, current = null;
+
+const $ = id => document.getElementById(id);
+const MAXTRY = () => mode === "classic" ? 2 : 1;
+
+/* ==================================================================
+   6. KEYPAD
+   ================================================================== */
+const ROWS = ["ABCDEFG","HIJKLMN","OPQRSTU","VWXYZ"];
+const CHARGES = [
+  {mag:"",  sign:"+", label:"+"},
+  {mag:"2", sign:"+", label:"2+"},
+  {mag:"3", sign:"+", label:"3+"},
+  {mag:"",  sign:"-", label:"&minus;"},
+  {mag:"2", sign:"-", label:"2&minus;"},
+  {mag:"3", sign:"-", label:"3&minus;"}
+];
+function buildKeyboard(){
+  ["rowA","rowB","rowC","rowD"].forEach((id,i)=>{
+    $(id).innerHTML = "";
+    for(const L of ROWS[i]){
+      const b = document.createElement("button");
+      b.className = "key";
+      b.textContent = caps ? L : L.toLowerCase();
+      b.onclick = () => { SFX.tap(); press({t:"sym", v: caps ? L : L.toLowerCase()}); };
+      $(id).appendChild(b);
+    }
+    if(i === 3){
+      const c = document.createElement("button");
+      c.className = "key caps";
+      c.dataset.on = caps ? "upper" : "lower";
+      c.textContent = caps ? "ABC → abc" : "abc → ABC";
+      c.onclick = () => { SFX.tap(); caps = !caps; buildKeyboard(); };
+      $(id).appendChild(c);
+    }
+  });
+  $("rowNum").innerHTML = "";
+  for(const d of "123456789"){
+    const b = document.createElement("button");
+    b.className = "key num";
+    b.textContent = d;
+    b.onclick = () => { SFX.tap(); press({t:"sub", v:d}); };
+    $("rowNum").appendChild(b);
+  }
+  $("rowChg").innerHTML = "";
+  for(const c of CHARGES){
+    const b = document.createElement("button");
+    b.className = "key chg";
+    b.dataset.charge = c.mag + c.sign;
+    b.innerHTML = c.label;
+    b.onclick = () => { SFX.tap(); setCharge(c.mag, c.sign); };
+    $("rowChg").appendChild(b);
+  }
+  markActiveCharge();
+}
+function press(tok){
+  if(locked || tokens.length >= 12) return;
+  tokens.push(tok); draw();
+}
+/* One tap sets the whole charge; a second charge key replaces the first. */
+function setCharge(mag, sign){
+  if(locked) return;
+  tokens = tokens.filter(k => k.t !== "sup");
+  if(mag) tokens.push({t:"sup", v:mag});
+  tokens.push({t:"sup", v:sign});
+  draw();
+}
+function markActiveCharge(){
+  const cur = tokens.filter(k => k.t === "sup").map(k => k.v).join("");
+  document.querySelectorAll(".key.chg").forEach(b => b.classList.toggle("on", b.dataset.charge === cur));
+}
+function backspace(){ if(locked) return; tokens.pop(); draw(); }
+
+function draw(){
+  $("answer").className = "answer";
+  $("answerInner").innerHTML = tokens.length
+    ? renderTokens(tokens) + '<span class="caret"></span>'
+    : '<span class="ph">Tap the keys to build the formula</span>';
+  markActiveCharge();
+}
+
+/* ==================================================================
+   7. MARKING  —  case-sensitive, with a specific hint per error type
+   ================================================================== */
+function split(toks){
+  return {body: toks.filter(k => k.t !== "sup"), charge: toks.filter(k => k.t === "sup")};
+}
+function judge(got, want){
+  const g = split(got), w = split(want);
+  const gBody = key(g.body), wBody = key(w.body);
+  const bodyExact  = gBody === wBody;
+  const bodyNoCase = gBody.toUpperCase() === wBody.toUpperCase();
+  const chargeOk   = key(g.charge) === key(w.charge);
+
+  if(bodyExact && chargeOk) return {ok:true};
+
+  if(bodyNoCase && !bodyExact && chargeOk){
+    const letters = g.body.filter(k => k.t === "sym"), wL = w.body.filter(k => k.t === "sym");
+    let msg = "Right element, right charge, but check your capitals.";
+    for(let i = 0; i < wL.length; i++){
+      const a = letters[i], b = wL[i];
+      if(a && b && a.v !== b.v){
+        msg = (b.v === b.v.toLowerCase())
+          ? "So close! In a two-letter symbol only the first letter is a capital. The second is always lower case."
+          : "So close! Every element symbol must begin with a capital letter.";
+        break;
+      }
+    }
+    return {ok:false, kind:"case", msg};
+  }
+  if(bodyExact || bodyNoCase){
+    const pre = bodyExact ? "" : "Also check your capitals. ";
+    if(g.charge.length === 0)
+      return {ok:false, kind:"charge", msg: pre + "The symbol is right, but an ion always needs its charge. Use an orange key."};
+    const gS = g.charge.filter(k => "+-".includes(k.v)).map(k => k.v).join("");
+    const wS = w.charge.filter(k => "+-".includes(k.v)).map(k => k.v).join("");
+    if(gS !== wS)
+      return {ok:false, kind:"charge", msg: pre + "Wrong sign. Metal ions and ammonium are positive; non-metal ions are negative."};
+    return {ok:false, kind:"charge", msg: pre + "Right ion, wrong size of charge. Count the electrons gained or lost."};
+  }
+  const gl = key(g.body.filter(k => k.t === "sym")).toUpperCase();
+  const wl = key(w.body.filter(k => k.t === "sym")).toUpperCase();
+  if(gl === wl)
+    return {ok:false, kind:"sub", msg:"Right elements, wrong subscripts. Check how many atoms of each."};
+  return {ok:false, kind:"formula", msg:"Not quite. Look carefully at which elements this ion contains."};
+}
+
+/* ==================================================================
+   8. MASTERY  —  ions a student keeps missing come back more often.
+   Stored on this device only.
+   ================================================================== */
+function missCounts(){
+  try{ return JSON.parse(store.get("ionMisses") || "{}"); }catch(e){ return {}; }
+}
+function saveMisses(m){ store.set("ionMisses", JSON.stringify(m)); }
+function noteMiss(name){ const m = missCounts(); m[name] = (m[name] || 0) + 1; saveMisses(m); }
+function noteHit(name){
+  const m = missCounts();
+  if(m[name]){ m[name]--; if(m[name] <= 0) delete m[name]; saveMisses(m); }
+}
+function weightedPick(list){
+  const m = missCounts(), bag = [];
+  for(const ion of list){
+    const w = 1 + Math.min(m[ion.name] || 0, 3) * 2;   // up to 7x more likely
+    for(let i = 0; i < w; i++) bag.push(ion);
+  }
+  return bag[Math.floor(Math.random() * bag.length)];
+}
+
+/* ==================================================================
+   9. EFFECTS
+   ================================================================== */
+function burst(){
+  const box = $("answer"), cols = ["#2747B8","#B4410F","#1E7A46","#E0B400"];
+  for(let i = 0; i < 12; i++){
+    const s = document.createElement("i");
+    const ang = Math.random() * Math.PI * 2, dist = 40 + Math.random() * 55;
+    s.className = "spark";
+    s.style.cssText = "background:" + cols[i % cols.length] +
+      ";--dx:" + (Math.cos(ang)*dist).toFixed(0) + "px;--dy:" + (Math.sin(ang)*dist).toFixed(0) + "px";
+    box.appendChild(s);
+    setTimeout(() => s.remove(), 750);
+  }
+}
+function popPoints(txt){
+  const p = document.createElement("div");
+  p.className = "pop"; p.textContent = txt;
+  $("answer").appendChild(p);
+  setTimeout(() => p.remove(), 1150);
+}
+function shake(el){ el.classList.remove("shake"); void el.offsetWidth; el.classList.add("shake"); }
+function mascotMood(cls){
+  const m = $("mascotGame");
+  m.classList.remove("happy","sad"); void m.offsetWidth;
+  if(cls) m.classList.add(cls);
+}
+
+/* ==================================================================
+   10. GAME FLOW
+   ================================================================== */
+function shuffle(a){
+  a = a.slice();
+  for(let i = a.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+function setList(){ return IONS.filter(i => cat === "all" || i.cat === cat); }
+
+/* Top-left control: "All games" on menus, "Exit" while playing.
+   Every game on the site should use this same pattern. */
+function showTopbar(playing){
+  $("homeLink").classList.toggle("hidden", playing);
+  $("exitBtn").classList.toggle("hidden", !playing);
+  $("hearts").classList.toggle("hidden", !(playing && mode === "survival"));
+  $("scoreSlot").classList.toggle("hidden", !playing);
+  $("progressRow").classList.toggle("hidden", !playing);
+  if(!playing) $("combo").textContent = "";
+}
+
+function startRound(list){
+  SFX.start();
+  pool = list || [];
+  idx = 0; score = 0; points = 0; missed = []; asked = 0;
+  streak = 0; bestStreak = 0; lives = 3; timeLeft = 60;
+  $("startScreen").classList.add("hidden");
+  $("resultScreen").classList.add("hidden");
+  $("gameScreen").classList.remove("hidden");
+  $("track").classList.toggle("time", mode === "time");
+  $("track").classList.remove("danger");
+  showTopbar(true);
+  if(mode === "time") startTimer();
+  nextQuestion();
+}
+
+function startTimer(){
+  clearInterval(timer);
+  timer = setInterval(() => {
+    timeLeft--;
+    updateHud();
+    if(timeLeft <= 10){ $("track").classList.add("danger"); if(timeLeft > 0) SFX.tick(); }
+    if(timeLeft <= 0){ clearInterval(timer); finish(); }
+  }, 1000);
+}
+
+function nextQuestion(){
+  current = (mode === "classic") ? pool[idx] : weightedPick(setList());
+  attempts = 0; tokens = []; locked = false; caps = true;
+  buildKeyboard(); draw();
+  $("ionname").innerHTML = "<span>" + current.name + "</span>";
+  clearHint();
+  $("feedback").className = "feedback";
+  $("feedback").innerHTML = "";
+  $("kb").classList.remove("hidden");
+  $("nextWrap").classList.add("hidden");
+  $("nextBtn").innerHTML = "Next &rarr;";
+  updateHud();
+}
+
+function multiplier(){
+  if(streak >= 8) return 3;
+  if(streak >= 5) return 2;
+  if(streak >= 3) return 1.5;
+  return 1;
+}
+
+function updateHud(){
+  $("scoreSlot").textContent = points.toLocaleString();
+  let h = "";
+  for(let i = 0; i < 3; i++) h += HEART(i < lives);
+  $("hearts").innerHTML = h;
+  $("combo").textContent = streak >= 2 ? streak + " in a row! ×" + multiplier() : "";
+
+  if(mode === "classic"){
+    $("qcount").textContent = "Q" + Math.min(idx + 1, pool.length) + " of " + pool.length;
+    $("fill").style.width = (idx / pool.length * 100) + "%";
+  }else if(mode === "time"){
+    const s = Math.max(timeLeft, 0);
+    $("qcount").textContent = "0:" + String(s).padStart(2, "0");
+    $("fill").style.width = (s / 60 * 100) + "%";
+  }else{
+    $("qcount").textContent = "Q" + (asked + 1);
+    $("fill").style.width = Math.min(asked / 20 * 100, 100) + "%";
+  }
+}
+
+function showHint(msg){
+  $("qhint").innerHTML = "<b>Try again.</b> " + msg;
+  $("qcard").classList.add("hinting");
+}
+function clearHint(){
+  $("qcard").classList.remove("hinting");
+  $("qhint").innerHTML = "";
+}
+
+/* An ion can list other accepted answers in `alt` (e.g. OCl- for
+   hypochlorite). The answer is marked against every accepted form; if
+   none match, the hint comes from the form the student was closest to. */
+const CLOSENESS = {case:0, charge:1, sub:2, formula:3};
+function judgeIon(got, ion){
+  const forms = [ion.f].concat(ion.alt || []);
+  let best = null;
+  for(const f of forms){
+    const r = judge(got, parseFormula(f));
+    if(r.ok) return r;
+    if(!best || CLOSENESS[r.kind] < CLOSENESS[best.kind]) best = r;
+  }
+  return best;
+}
+/* "ClO⁻" or "ClO⁻ (OCl⁻ is also accepted)" */
+function answerText(ion){
+  let t = renderTokens(parseFormula(ion.f));
+  if(ion.alt && ion.alt.length)
+    t += ' <span style="font-size:.6em;font-weight:500">(' +
+         ion.alt.map(a => renderTokens(parseFormula(a))).join(" or ") + " is also accepted)</span>";
+  return t;
+}
+
+/* After a correct answer: " OCl⁻ is also accepted." for the form(s)
+   the student did NOT type. Empty for ions with only one answer. */
+function otherForms(ion, got){
+  const others = [ion.f].concat(ion.alt || []).filter(f => !judge(got, parseFormula(f)).ok);
+  if(!ion.alt || !others.length) return "";
+  return " " + others.map(f => renderTokens(parseFormula(f))).join(" or ") + " is also accepted.";
+}
+
+function check(){
+  if(locked || tokens.length === 0) return;
+  const res = judgeIon(tokens, current);
+  const fb = $("feedback");
+  attempts++;
+
+  if(res.ok){
+    locked = true; asked++;
+    const first = attempts === 1;
+    if(first){ score++; streak++; bestStreak = Math.max(bestStreak, streak); noteHit(current.name); }
+    else streak = 0;
+    const gain = Math.round((first ? 100 : 40) * multiplier());
+    points += gain;
+    clearHint();
+    $("answer").className = "answer ok";
+    popPoints("+" + gain);
+    burst();
+    (streak >= 3 ? SFX.combo : SFX.good)();
+    mascotMood("happy");
+    if(streak === 3 || streak === 5 || streak === 8){
+      const c = $("combo"); c.classList.remove("big"); void c.offsetWidth; c.classList.add("big");
+    }
+    fb.className = "feedback show good";
+    fb.innerHTML = '<div class="head">' + (first ? "Nice work!" : "Got it!") + "</div>" +
+                   "The " + current.name + " is " + renderTokens(tokens) + "." + otherForms(current, tokens);
+    endQuestion();
+    return;
+  }
+
+  $("answer").className = "answer no";
+  shake($("answer"));
+  SFX.bad();
+  mascotMood("sad");
+
+  if(attempts < MAXTRY()){
+    showHint(res.msg);
+    return;
+  }
+
+  clearHint();
+  locked = true; asked++; streak = 0;
+  missed.push(current); noteMiss(current.name);
+  if(mode === "survival") lives--;
+  fb.className = "feedback show bad";
+  fb.innerHTML = '<div class="head">The answer is&hellip;</div>' + res.msg +
+                 '<span class="reveal">' + answerText(current) + "</span>";
+  endQuestion();
+}
+
+function endQuestion(){
+  $("answerInner").innerHTML = renderTokens(tokens);   // drop the typing cursor
+  updateHud();
+  $("kb").classList.add("hidden");
+  $("nextWrap").classList.remove("hidden");
+  const over = (mode === "survival" && lives <= 0) ||
+               (mode === "classic" && idx + 1 >= pool.length);
+  if(over) $("nextBtn").innerHTML = "See results &rarr;";
+}
+
+function next(){
+  if(mode === "survival" && lives <= 0) return finish();
+  if(mode === "time" && timeLeft <= 0) return finish();
+  if(mode === "classic"){
+    idx++;
+    if(idx >= pool.length) return finish();
+  }
+  nextQuestion();
+}
+
+function finish(){
+  clearInterval(timer);
+  SFX.over();
+  $("gameScreen").classList.add("hidden");
+  $("resultScreen").classList.remove("hidden");
+  showTopbar(false);
+
+  const pct = asked ? Math.round(score / asked * 100) : 0;
+  $("rankTitle").textContent = RANKS.find(r => pct >= r.min).t;
+  $("bigscore").innerHTML = points.toLocaleString() + "<small>points</small>";
+  $("stCorrect").textContent = score + " / " + asked;
+  $("stStreak").textContent  = bestStreak;
+  $("stAcc").textContent     = pct + "%";
+
+  const bkey = "ionBest_" + mode + "_" + cat;
+  const prev = parseInt(store.get(bkey) || "0", 10);
+  const isBest = points > prev && points > 0;
+  if(isBest) store.set(bkey, String(points));
+  $("newBest").classList.toggle("hidden", !isBest);
+
+  const uniq = [...new Map(missed.map(m => [m.name, m])).values()];
+  if(uniq.length){
+    let html = '<div class="label">Practise these</div><ul class="misslist">';
+    for(const m of uniq)
+      html += "<li><span>" + m.name + '</span><span class="f">' + renderTokens(parseFormula(m.f)) + "</span></li>";
+    $("missWrap").innerHTML = html + "</ul>";
+    $("retryBtn").classList.remove("hidden");
+  }else{
+    $("missWrap").innerHTML = "";
+    $("retryBtn").classList.add("hidden");
+  }
+}
+
+function toMenu(){
+  clearInterval(timer);
+  $("gameScreen").classList.add("hidden");
+  $("resultScreen").classList.add("hidden");
+  $("listScreen").classList.add("hidden");
+  $("startScreen").classList.remove("hidden");
+  document.body.classList.remove("listing");
+  $("backBtn").classList.add("hidden");
+  showTopbar(false);
+  showBest();
+}
+
+/* ---------- ion list (built from the same IONS data as the game) ---------- */
+const GROUPS = [
+  {cat:"cation", ch:"+",  label:"1+"}, {cat:"cation", ch:"2+", label:"2+"}, {cat:"cation", ch:"3+", label:"3+"},
+  {cat:"anion",  ch:"-",  label:"1−"}, {cat:"anion", ch:"2-", label:"2−"}, {cat:"anion", ch:"3-", label:"3−"}
+];
+function buildList(){
+  const weak = missCounts();
+  let html = "";
+  for(const c of ["cation","anion"]){
+    html += '<div class="col" data-col="' + c + '"><h3 class="coltitle">' + (c === "cation" ? "Cations" : "Anions") + "</h3>";
+    for(const g of GROUPS.filter(x => x.cat === c)){
+      const ions = IONS.filter(i => i.cat === c && i.f.split("^")[1] === g.ch);
+      if(!ions.length) continue;
+      html += '<div class="group"><div class="ghead"><span class="pill">' + g.label + "</span>charge" +
+              '<span class="n">' + ions.length + " ions</span></div><ul class=\"ionrows\">";
+      for(const ion of ions){
+        let fm = renderTokens(parseFormula(ion.f));
+        if(ion.alt) fm += ' <span class="alt">or ' + ion.alt.map(a => renderTokens(parseFormula(a))).join(" or ") + "</span>";
+        html += "<li><span class=\"nm\">" + ion.name + (weak[ion.name] ? ' <span class="weak">practise</span>' : "") +
+                '</span><span class="cover ncov">tap to show name</span>' +
+                '<span class="fm">' + fm + '</span><span class="cover fcov">tap to show</span></li>';
+      }
+      html += "</ul></div>";
+    }
+    html += "</div>";
+  }
+  $("lists").innerHTML = html;
+  showTab(currentTab);
+}
+let currentTab = "cation";
+function showTab(t){
+  currentTab = t;
+  document.querySelectorAll("#listTabs button").forEach(b => b.setAttribute("aria-selected", b.dataset.tab === t ? "true" : "false"));
+  document.querySelectorAll(".col").forEach(col => col.classList.toggle("hidden-tab", col.dataset.col !== t));
+}
+function openList(){
+  $("startScreen").classList.add("hidden");
+  $("listScreen").classList.remove("hidden");
+  $("homeLink").classList.add("hidden");
+  $("backBtn").classList.remove("hidden");
+  document.body.classList.add("listing");
+  buildList();
+  window.scrollTo(0, 0);
+}
+
+function buildPool(){
+  let list = shuffle(setList());
+  if(roundLen > 0) list = list.slice(0, roundLen);
+  return list;
+}
+function showBest(){
+  const b = parseInt(store.get("ionBest_" + mode + "_" + cat) || "0", 10);
+  const weak = Object.keys(missCounts()).length;
+  const parts = [];
+  if(b) parts.push("Your best here: " + b.toLocaleString() + " points");
+  if(weak) parts.push(weak + " ion" + (weak > 1 ? "s" : "") + " to practise");
+  $("bestNote").textContent = parts.length ? parts.join(" · ") : "Answer in a row to multiply your points, up to ×3.";
+}
+function pick(groupId, btn){
+  [...$(groupId).children].forEach(c => c.setAttribute("aria-pressed", c === btn ? "true" : "false"));
+}
+
+/* ---------- wiring ---------- */
+$("modeChoices").onclick = e => {
+  const b = e.target.closest(".choice"); if(!b) return;
+  SFX.tap(); mode = b.dataset.mode; pick("modeChoices", b);
+  const classic = mode === "classic";
+  $("lenLabel").classList.toggle("hidden", !classic);
+  $("lenChoices").classList.toggle("hidden", !classic);
+  showBest();
+};
+$("catChoices").onclick = e => {
+  const b = e.target.closest(".choice"); if(!b) return;
+  SFX.tap(); cat = b.dataset.cat; pick("catChoices", b); showBest();
+};
+$("lenChoices").onclick = e => {
+  const b = e.target.closest(".choice"); if(!b) return;
+  SFX.tap(); roundLen = parseInt(b.dataset.len, 10); pick("lenChoices", b);
+};
+$("startBtn").onclick = () => startRound(mode === "classic" ? buildPool() : null);
+$("checkBtn").onclick = check;
+$("delBtn").onclick   = () => { SFX.tap(); backspace(); };
+$("nextBtn").onclick  = next;
+$("againBtn").onclick = () => startRound(mode === "classic" ? buildPool() : null);
+$("retryBtn").onclick = () => {
+  const uniq = [...new Map(missed.map(m => [m.name, m])).values()];
+  mode = "classic";
+  pick("modeChoices", $("modeChoices").querySelector('[data-mode="classic"]'));
+  $("lenLabel").classList.remove("hidden");
+  $("lenChoices").classList.remove("hidden");
+  startRound(shuffle(uniq));
+};
+$("menuBtn").onclick = toMenu;
+$("exitBtn").onclick = () => {
+  const busy = asked > 0 || attempts > 0 || tokens.length > 0;
+  if(busy && !confirm("Leave this round? Your score will not be saved.")) return;
+  toMenu();
+};
+function paintSound(){
+  $("sfxBtn").innerHTML = SPEAKER(!muted);
+  $("sfxBtn").classList.toggle("off", muted);
+}
+$("sfxBtn").onclick = () => {
+  muted = !muted;
+  store.set("ionSfx", muted ? "off" : "on");
+  paintSound();
+  if(!muted) SFX.tap();
+};
+
+/* physical keyboard, handy on a laptop */
+document.addEventListener("keydown", e => {
+  if($("gameScreen").classList.contains("hidden")) return;
+  if(e.key === "Enter"){ locked ? next() : check(); e.preventDefault(); return; }
+  if(locked) return;
+  if(e.key === "Backspace"){ backspace(); e.preventDefault(); return; }
+  if(/^[a-zA-Z]$/.test(e.key)){ press({t:"sym", v:e.key}); return; }
+  if(/^[0-9]$/.test(e.key)){    press({t:"sub", v:e.key}); return; }
+  /* no "2+" key on a laptop: a 2 or 3 typed just before + or - becomes
+     the size of the charge. The on-screen keys stay unambiguous. */
+  if(e.key === "+" || e.key === "-"){
+    const last = tokens[tokens.length - 1];
+    let mag = "";
+    if(last && last.t === "sub" && (last.v === "2" || last.v === "3")){ mag = last.v; tokens.pop(); }
+    setCharge(mag, e.key);
+  }
+});
+
+/* iOS Safari only shows the pressed-key (:active) look when the page
+   has a touch listener; this empty one switches it on. */
+document.addEventListener("touchstart", function(){}, {passive:true});
+
+$("listBtn").onclick = () => { SFX.tap(); openList(); };
+$("backBtn").onclick = () => { SFX.tap(); toMenu(); window.scrollTo(0, 0); };
+$("listTabs").onclick = e => { const b = e.target.closest("button"); if(b){ SFX.tap(); showTab(b.dataset.tab); window.scrollTo(0, 0); } };
+/* Cover names / Cover formulas: one at a time (covering both would
+   hide the whole row). Switching re-covers every row. */
+function setCover(){
+  const n = $("hideN").checked, f = $("hideF").checked;
+  $("lists").classList.toggle("hide-n", n);
+  $("lists").classList.toggle("hide-f", f);
+  document.querySelectorAll(".ionrows li.shown").forEach(li => li.classList.remove("shown"));
+}
+$("hideN").onchange = e => { SFX.tap(); if(e.target.checked) $("hideF").checked = false; setCover(); };
+$("hideF").onchange = e => { SFX.tap(); if(e.target.checked) $("hideN").checked = false; setCover(); };
+$("lists").onclick = e => {
+  const li = e.target.closest("li");
+  const covering = $("lists").classList.contains("hide-n") || $("lists").classList.contains("hide-f");
+  if(li && covering){ SFX.tap(); li.classList.toggle("shown"); }
+};
+
+/* boot */
+$("mascotTitle").innerHTML = mascotSVG(96);
+$("mascotGame").innerHTML  = mascotSVG(52);
+$("mascotEnd").innerHTML   = mascotSVG(80);
+paintSound();
+buildKeyboard();
+draw();
+showBest();
+</script>
+</body>
+</html>
